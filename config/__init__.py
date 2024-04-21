@@ -3,7 +3,7 @@ import configparser
 import logging
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
-config_database_file = os.path.join(CONFIG_DIR, "antifraud.cfg")
+config_database_file = os.path.join(CONFIG_DIR, 'antifraud.cfg')
 
 
 class Config(object):
@@ -14,8 +14,8 @@ class Config(object):
         self.input_shape_2d = (9, 9)
         self.input_shape_3d = (64, 8, 7)
         self.num_classes = 2
-        self.filter_sizes = [2,3,4]
-        self.num_filters = [6,12,24]
+        self.filter_sizes = [2, 3, 4]
+        self.num_filters = [6, 12, 24]
         self.attention_hidden_dim = 100
         self.batch_size = 256
         self.num_epochs = 16
@@ -35,4 +35,4 @@ class Config(object):
         }[levels]
 
     def get_log_level(self):
-        return self.__get_log_level(self.__config["log"]["log.level"])
+        return self.__get_log_level(self.__config['log']['log.level'])

@@ -11,21 +11,12 @@ def to_pred(logits: torch.Tensor) -> list:
 
 
 class mcnn(nn.Module):
-    def __init__(
-        self,
-        in_channels: int = 1
-    ):
+    def __init__(self, in_channels: int = 1):
         super().__init__()
         self.conv1 = nn.Conv2d(
-            in_channels == in_channels,
-            out_channels=32,
-            kernel_size=(2, 2)
+            in_channels == in_channels, out_channels=32, kernel_size=(2, 2)
         )
-        self.conv2 = nn.Conv2d(
-            in_channels=32,
-            out_channels=64,
-            kernel_size=(2, 2)
-        )
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2))
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2))
         self.flatten = nn.Flatten()
         self.linears = nn.Sequential(
@@ -33,7 +24,7 @@ class mcnn(nn.Module):
             nn.ReLU(),
             nn.LazyLinear(out_features=64),
             nn.ReLU(),
-            nn.LazyLinear(out_features=2)
+            nn.LazyLinear(out_features=2),
         )
 
     def forward(self, x: torch.Tensor):

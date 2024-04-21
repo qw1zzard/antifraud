@@ -20,7 +20,7 @@ def data_engineer_example(data_dir):
     Nov = []
     Dec = []
 
-    start_time = "2015/1/1 00:00"
+    start_time = '2015/1/1 00:00'
 
     for i in data.iterrows():
         data2 = []
@@ -33,40 +33,57 @@ def data_engineer_example(data_dir):
         a_purch = i[1]['amt_purch']
         for loc in data['loc_cty'].unique():
             data1 = []
-            if (loc in temp_data['loc_cty'].unique()):
+            if loc in temp_data['loc_cty'].unique():
                 card_tuple = temp_data['loc_cty'] == loc
                 single_loc_card_data = temp_data[card_tuple]
                 time_list = single_loc_card_data['time_stamp']
                 for length in time_span:
-                    lowbound = (time_list >= (temp_time - length))
-                    upbound = (time_list <= temp_time)
+                    lowbound = time_list >= (temp_time - length)
+                    upbound = time_list <= temp_time
                     correct_data = single_loc_card_data[lowbound & upbound]
                     Avg_grt_amt = correct_data['amt_grant'].mean()
                     Totl_grt_amt = correct_data['amt_grant'].sum()
                     Avg_pur_amt = correct_data['amt_purch'].mean()
                     Totl_pur_amt = correct_data['amt_purch'].sum()
                     Num = correct_data['amt_grant'].count()
-                    if (isnan(Avg_grt_amt)):
+                    if isnan(Avg_grt_amt):
                         Avg_grt_amt = 0
-                    if (isnan(Avg_pur_amt)):
+                    if isnan(Avg_pur_amt):
                         Avg_pur_amt = 0
-                    data1.append([a_grant, Avg_grt_amt, Totl_grt_amt,
-                                  a_purch, Avg_pur_amt, Totl_pur_amt, Num])
+                    data1.append(
+                        [
+                            a_grant,
+                            Avg_grt_amt,
+                            Totl_grt_amt,
+                            a_purch,
+                            Avg_pur_amt,
+                            Totl_pur_amt,
+                            Num,
+                        ]
+                    )
             else:
                 for length in time_span:
                     data1.append([0, 0, 0, 0, 0, 0, 0])
             data2.append(data1)
-        if (temp_time > pd.to_datetime(start_time)):
-            if (temp_time <= pd.to_datetime(start_time) + pd.Timedelta(seconds=9 * 2628000)):
+        if temp_time > pd.to_datetime(start_time):
+            if temp_time <= pd.to_datetime(start_time) + pd.Timedelta(
+                seconds=9 * 2628000
+            ):
                 train.append([temp_label, np.array(data2)])
-        if (temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=9 * 2628000)):
-            if (temp_time <= pd.to_datetime(start_time) + pd.Timedelta(seconds=10 * 2628000)):
+        if temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=9 * 2628000):
+            if temp_time <= pd.to_datetime(start_time) + pd.Timedelta(
+                seconds=10 * 2628000
+            ):
                 Oct.append([temp_label, np.array(data2)])
-        if (temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=10 * 2628000)):
-            if (temp_time <= pd.to_datetime(start_time) + pd.Timedelta(seconds=11 * 2628000)):
+        if temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=10 * 2628000):
+            if temp_time <= pd.to_datetime(start_time) + pd.Timedelta(
+                seconds=11 * 2628000
+            ):
                 Nov.append([temp_label, np.array(data2)])
-        if (temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=11 * 2628000)):
-            if (temp_time <= pd.to_datetime(start_time) + pd.Timedelta(seconds=12 * 2628000)):
+        if temp_time > pd.to_datetime(start_time) + pd.Timedelta(seconds=11 * 2628000):
+            if temp_time <= pd.to_datetime(start_time) + pd.Timedelta(
+                seconds=12 * 2628000
+            ):
                 Dec.append([temp_label, np.array(data2)])
     np.save(file='train', arr=train)
     np.save(file='Oct', arr=Oct)
@@ -86,32 +103,30 @@ def featmap_gen(tmp_card, tmp_df=None):
         temp_time = new_df.Time
         temp_amt = new_df.Amount
         for length, tname in zip(time_span, time_name):
-            lowbound = (time_list >= temp_time - length)
-            upbound = (time_list <= temp_time)
+            lowbound = time_list >= temp_time - length
+            upbound = time_list <= temp_time
             correct_data = tmp_df[lowbound & upbound]
-            new_df['trans_at_avg_{}'.format(
-                tname)] = correct_data['Amount'].mean()
-            new_df['trans_at_totl_{}'.format(
-                tname)] = correct_data['Amount'].sum()
-            new_df['trans_at_std_{}'.format(
-                tname)] = correct_data['Amount'].std()
-            new_df['trans_at_bias_{}'.format(
-                tname)] = temp_amt - correct_data['Amount'].mean()
+            new_df['trans_at_avg_{}'.format(tname)] = correct_data['Amount'].mean()
+            new_df['trans_at_totl_{}'.format(tname)] = correct_data['Amount'].sum()
+            new_df['trans_at_std_{}'.format(tname)] = correct_data['Amount'].std()
+            new_df['trans_at_bias_{}'.format(tname)] = (
+                temp_amt - correct_data['Amount'].mean()
+            )
             new_df['trans_at_num_{}'.format(tname)] = len(correct_data)
             new_df['trans_target_num_{}'.format(tname)] = len(
-                correct_data.Target.unique())
+                correct_data.Target.unique()
+            )
             new_df['trans_location_num_{}'.format(tname)] = len(
-                correct_data.Location.unique())
-            new_df['trans_type_num_{}'.format(tname)] = len(
-                correct_data.Type.unique())
+                correct_data.Location.unique()
+            )
+            new_df['trans_type_num_{}'.format(tname)] = len(correct_data.Type.unique())
         post_fe.append(new_df)
     return pd.DataFrame(post_fe)
 
 
 def data_engineer_benchmark(feat_df):
     pool = mp.Pool(processes=4)
-    args_all = [(card_n, card_df)
-                for card_n, card_df in feat_df.groupby("Source")]
+    args_all = [(card_n, card_df) for card_n, card_df in feat_df.groupby('Source')]
     jobs = [pool.apply_async(featmap_gen, args=args) for args in args_all]
     # post_fe_df = [job.get() for job in jobs]
     post_fe_df = []
@@ -119,16 +134,14 @@ def data_engineer_benchmark(feat_df):
     for i, job in enumerate(jobs):
         post_fe_df.append(job.get())
         sys.stdout.flush()
-        sys.stdout.write("FE: {}/{}\r".format(i + 1, num_job))
+        sys.stdout.write('FE: {}/{}\r'.format(i + 1, num_job))
         sys.stdout.flush()
     post_fe_df = pd.concat(post_fe_df)
-    post_fe_df = post_fe_df.fillna(0.)
+    post_fe_df = post_fe_df.fillna(0.0)
     return post_fe_df
 
 
-def calcu_trading_entropy(
-        data_2: pd.DataFrame
-) -> float:
+def calcu_trading_entropy(data_2: pd.DataFrame) -> float:
     """calculate trading entropy of given data
     Args:
         data (pd.DataFrame): 2 cols, Amount and Type
@@ -139,17 +152,21 @@ def calcu_trading_entropy(
     if len(data_2) == 0:
         return 0
 
-    amounts = np.array([data_2[data_2['Type'] == type]['Amount'].sum()
-                        for type in data_2['Type'].unique()])
+    amounts = np.array(
+        [
+            data_2[data_2['Type'] == type]['Amount'].sum()
+            for type in data_2['Type'].unique()
+        ]
+    )
     proportions = amounts / amounts.sum() if amounts.sum() else np.ones_like(amounts)
-    ent = -np.array([proportion * np.log(1e-5 + proportion)
-                     for proportion in proportions]).sum()
+    ent = -np.array(
+        [proportion * np.log(1e-5 + proportion) for proportion in proportions]
+    ).sum()
     return ent
 
 
 def span_data_2d(
-        data: pd.DataFrame,
-        time_windows: list = [1, 3, 5, 10, 20, 50, 100, 500]
+    data: pd.DataFrame, time_windows: list = [1, 3, 5, 10, 20, 50, 100, 500]
 ) -> np.ndarray:
     """transform transaction record into feature matrices
 
@@ -171,19 +188,18 @@ def span_data_2d(
 
         for time_span in time_windows:
             feature_of_one_timestamp = []
-            prev_records = data.iloc[(row_idx - time_span):row_idx, :]
-            prev_and_now_records = data.iloc[(
-                                                     row_idx - time_span):row_idx + 1, :]
+            prev_records = data.iloc[(row_idx - time_span) : row_idx, :]
+            prev_and_now_records = data.iloc[(row_idx - time_span) : row_idx + 1, :]
             prev_records = prev_records[prev_records['Source'] == acct_no]
 
             # AvgAmountT
-            feature_of_one_timestamp.append(
-                prev_records['Amount'].sum() / time_span)
+            feature_of_one_timestamp.append(prev_records['Amount'].sum() / time_span)
             # TotalAmountTs
             feature_of_one_timestamp.append(prev_records['Amount'].sum())
             # BiasAmountT
             feature_of_one_timestamp.append(
-                record['Amount'] - feature_of_one_timestamp[0])
+                record['Amount'] - feature_of_one_timestamp[0]
+            )
             # NumberT
             feature_of_one_timestamp.append(len(prev_records))
             # MostCountryT/MostTerminalT -> no data for these items
@@ -193,8 +209,7 @@ def span_data_2d(
 
             # TradingEntropyT ->  TradingEntropyT = EntT − NewEntT
             old_ent = calcu_trading_entropy(prev_records[['Amount', 'Type']])
-            new_ent = calcu_trading_entropy(
-                prev_and_now_records[['Amount', 'Type']])
+            new_ent = calcu_trading_entropy(prev_and_now_records[['Amount', 'Type']])
             feature_of_one_timestamp.append(old_ent - new_ent)
 
             feature_of_one_record.append(feature_of_one_timestamp)
@@ -206,15 +221,18 @@ def span_data_2d(
 
     # sanity check
     assert nume_feature_ret.shape == (
-        len(data), 5, len(time_windows)), "output shape invalid."
+        len(data),
+        5,
+        len(time_windows),
+    ), 'output shape invalid.'
 
     return nume_feature_ret.astype(np.float32), np.array(label_ret).astype(np.int64)
 
 
 def span_data_3d(
-        data: pd.DataFrame,
-        time_windows=None,
-        spatio_windows=None,
+    data: pd.DataFrame,
+    time_windows=None,
+    spatio_windows=None,
 ) -> np.ndarray:
     """transform transaction record into feature matrices
 
@@ -229,7 +247,7 @@ def span_data_3d(
     if time_windows is None:
         time_windows = [1, 3, 5, 10, 20, 50, 100, 500]
     if spatio_windows is None:
-        spatio_windows = [1, 2, 3, 4,5]
+        spatio_windows = [1, 2, 3, 4, 5]
     data = data[data['Labels'] != 2]
     data['Location'] = data['Location'].apply(lambda x: int(x.split('L')[1]))
     data['Location'] = data['Location'].apply(lambda x: 1 if x == 100 else x)
@@ -247,31 +265,37 @@ def span_data_3d(
         feature_of_one_record = []
         for time_span in time_windows:
             feature_of_one_timestamp = []
-            prev_records = data.iloc[(row_idx - time_span):row_idx, :]
-            prev_and_now_records = data.iloc[(
-                                                     row_idx - time_span):row_idx + 1, :]
+            prev_records = data.iloc[(row_idx - time_span) : row_idx, :]
+            prev_and_now_records = data.iloc[(row_idx - time_span) : row_idx + 1, :]
             prev_records = prev_records[prev_records['Source'] == acct_no]
 
             for spatio_span in spatio_windows:
                 feature_of_one_spatio_stamp = []
-                one_spatio_records = prev_records[prev_records['Location'] > location - spatio_span]
-                one_spatio_records = one_spatio_records[one_spatio_records['Location'] < location + spatio_span]
+                one_spatio_records = prev_records[
+                    prev_records['Location'] > location - spatio_span
+                ]
+                one_spatio_records = one_spatio_records[
+                    one_spatio_records['Location'] < location + spatio_span
+                ]
 
                 # AvgAmountT
                 feature_of_one_spatio_stamp.append(
-                    one_spatio_records['Amount'].sum() / time_span)
+                    one_spatio_records['Amount'].sum() / time_span
+                )
                 # TotalAmountTs
                 feature_of_one_spatio_stamp.append(one_spatio_records['Amount'].sum())
                 # BiasAmountT
                 feature_of_one_spatio_stamp.append(
-                    record['Amount'] - feature_of_one_spatio_stamp[0])
+                    record['Amount'] - feature_of_one_spatio_stamp[0]
+                )
                 # NumberT
                 feature_of_one_spatio_stamp.append(len(one_spatio_records))
 
                 # TradingEntropyT ->  TradingEntropyT = EntT − NewEntT
                 old_ent = calcu_trading_entropy(prev_records[['Amount', 'Type']])
                 new_ent = calcu_trading_entropy(
-                    prev_and_now_records[['Amount', 'Type']])
+                    prev_and_now_records[['Amount', 'Type']]
+                )
                 feature_of_one_spatio_stamp.append(old_ent - new_ent)
 
                 feature_of_one_timestamp.append(feature_of_one_spatio_stamp)
@@ -283,6 +307,10 @@ def span_data_3d(
     print(nume_feature_ret.shape)
     # sanity check
     assert nume_feature_ret.shape == (
-        len(data), len(time_windows), len(spatio_windows), 5), "output shape invalid."
+        len(data),
+        len(time_windows),
+        len(spatio_windows),
+        5,
+    ), 'output shape invalid.'
 
     return nume_feature_ret.astype(np.float32), np.array(label_ret).astype(np.int64)

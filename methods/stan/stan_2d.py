@@ -21,7 +21,7 @@ class stan_2d_model(nn.Module):
         cate_unique_num: list = [1664, 216, 2500],
         filter_sizes: tuple = (2, 2),
         num_filters: int = 64,
-        in_channels: int = 1
+        in_channels: int = 1,
     ) -> None:
         super().__init__()
         self.time_windows_dim = time_windows_dim
@@ -38,18 +38,19 @@ class stan_2d_model(nn.Module):
         #     cate_unique_num[idx] + 1, cate_embed_dim) for idx in range(cate_feat_num)])
 
         # attention layer
-        self.attention_W = nn.Parameter(torch.Tensor(
-            self.feat_dim, self.attention_hidden_dim).uniform_(0., 1.))
-        self.attention_U = nn.Parameter(torch.Tensor(
-            self.feat_dim, self.attention_hidden_dim).uniform_(0., 1.))
-        self.attention_V = nn.Parameter(torch.Tensor(
-            self.attention_hidden_dim, 1).uniform_(0., 1.))
+        self.attention_W = nn.Parameter(
+            torch.Tensor(self.feat_dim, self.attention_hidden_dim).uniform_(0.0, 1.0)
+        )
+        self.attention_U = nn.Parameter(
+            torch.Tensor(self.feat_dim, self.attention_hidden_dim).uniform_(0.0, 1.0)
+        )
+        self.attention_V = nn.Parameter(
+            torch.Tensor(self.attention_hidden_dim, 1).uniform_(0.0, 1.0)
+        )
 
         # cnn layer
         self.conv = nn.Conv2d(
-            in_channels=in_channels,
-            out_channels=num_filters,
-            kernel_size=filter_sizes
+            in_channels=in_channels, out_channels=num_filters, kernel_size=filter_sizes
         )
 
         # FC layer
@@ -59,13 +60,10 @@ class stan_2d_model(nn.Module):
             nn.ReLU(),
             nn.LazyLinear(32),
             nn.ReLU(),
-            nn.LazyLinear(self.num_classes)
+            nn.LazyLinear(self.num_classes),
         )
 
-    def attention_layer(
-        self,
-        X: torch.Tensor
-    ):
+    def attention_layer(self, X: torch.Tensor):
         self.output_att = []
         # split along time_windows axis
         input_att = torch.split(X, 1, dim=1)
@@ -79,23 +77,22 @@ class stan_2d_model(nn.Module):
             # print(4, inp.shape)
             self.output_att.append(inp)
 
-        input_conv = torch.reshape(torch.concat(self.output_att, axis=1),
-                                   [-1, self.time_windows_dim, self.feat_dim*2])
+        input_conv = torch.reshape(
+            torch.concat(self.output_att, axis=1),
+            [-1, self.time_windows_dim, self.feat_dim * 2],
+        )
         # print(5, input_conv.shape)
         self.input_conv_expanded = torch.unsqueeze(input_conv, 1)
         # print(6, self.input_conv_expanded.shape)
         return self.input_conv_expanded
 
-    def cnn_layer(
-        self,
-        input: torch.Tensor
-    ):
+    def cnn_layer(self, input: torch.Tensor):
         if len(input.shape) == 3:
             self.input_conv_expanded = torch.unsqueeze(input, 1)
         elif len(input.shape) == 4:
             self.input_conv_expanded = input
         else:
-            print("Wrong conv input shape!")
+            print('Wrong conv input shape!')
 
         self.input_conv_expanded = F.relu(self.conv(input))
 
@@ -108,8 +105,12 @@ class stan_2d_model(nn.Module):
         for i in range(len(x)):
             output = x[i]
             output = output.reshape(-1, self.feat_dim)
-            att_hidden = torch.tanh(torch.add(torch.matmul(
-                x_i, self.attention_W), torch.matmul(output, self.attention_U)))
+            att_hidden = torch.tanh(
+                torch.add(
+                    torch.matmul(x_i, self.attention_W),
+                    torch.matmul(output, self.attention_U),
+                )
+            )
             e_i_j = torch.matmul(att_hidden, self.attention_V)
             e_i.append(e_i_j)
         # print(7, e_i[0].shape)
@@ -127,8 +128,9 @@ class stan_2d_model(nn.Module):
                 c_i_j = torch.multiply(alpha_i_j, output)
                 c_i.append(c_i_j)
         # print(9, c_i[0].shape)
-        c_i = torch.reshape(torch.concat(c_i, axis=1),
-                            [-1, self.time_windows_dim-1, self.feat_dim])
+        c_i = torch.reshape(
+            torch.concat(c_i, axis=1), [-1, self.time_windows_dim - 1, self.feat_dim]
+        )
         # print(10, c_i.shape)
         c_i = torch.sum(c_i, dim=1)
         return c_i

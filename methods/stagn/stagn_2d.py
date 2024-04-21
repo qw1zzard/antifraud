@@ -9,15 +9,18 @@ from dgl.nn import GraphConv
 class TransactionGCN(torch.nn.Module):
     def __init__(self, in_feats, hidden_feats, out_feats, g, device):
         super().__init__()
-        self.conv1 = GraphConv(in_feats, hidden_feats,
-                               allow_zero_in_degree=True)
-        self.conv2 = GraphConv(hidden_feats, out_feats,
-                               allow_zero_in_degree=True)
+        self.conv1 = GraphConv(in_feats, hidden_feats, allow_zero_in_degree=True)
+        self.conv2 = GraphConv(hidden_feats, out_feats, allow_zero_in_degree=True)
         self.lin1 = nn.Linear(in_feats, hidden_feats)
         self.lin2 = nn.Linear(hidden_feats, out_feats)
 
-        g.ndata['feat'] = torch.nn.init.xavier_uniform_(torch.empty(
-            g.num_nodes(), g.edata['feat'].shape[1])).to(torch.float32).to(device)
+        g.ndata['feat'] = (
+            torch.nn.init.xavier_uniform_(
+                torch.empty(g.num_nodes(), g.edata['feat'].shape[1])
+            )
+            .to(torch.float32)
+            .to(device)
+        )
         g.ndata['h'] = g.ndata['feat']
         g.edata['x'] = g.edata['feat']
 
@@ -27,19 +30,20 @@ class TransactionGCN(torch.nn.Module):
         g.ndata['h'] = h1
         g.edata['x'] = e1
         g.apply_edges(
-            lambda edges: {'x': edges.src['h'] + edges.dst['h'] + edges.data['x']})
+            lambda edges: {'x': edges.src['h'] + edges.dst['h'] + edges.data['x']}
+        )
 
         h2 = self.conv2(g, h1)
         e2 = torch.relu(self.lin2(e1))
         g.ndata['h'] = h2
         g.edata['x'] = e2
         g.apply_edges(
-            lambda edges: {'x': edges.src['h'] + edges.dst['h'] + edges.data['x']})
+            lambda edges: {'x': edges.src['h'] + edges.dst['h'] + edges.data['x']}
+        )
         return g.ndata['h'], g.edata['x']
 
 
 class stagn_2d_model(nn.Module):
-
     def __init__(
         self,
         time_windows_dim: int,
@@ -50,7 +54,7 @@ class stagn_2d_model(nn.Module):
         filter_sizes: tuple = (2, 2),
         num_filters: int = 64,
         in_channels: int = 1,
-        device="cpu"
+        device='cpu',
     ) -> None:
         """
         Initialize the STAGN-2d model
@@ -78,39 +82,36 @@ class stagn_2d_model(nn.Module):
         self.graph = g.to(device)
 
         # attention layer
-        self.attention_W = nn.Parameter(torch.Tensor(
-            self.feat_dim, self.attention_hidden_dim).uniform_(0., 1.))
-        self.attention_U = nn.Parameter(torch.Tensor(
-            self.feat_dim, self.attention_hidden_dim).uniform_(0., 1.))
-        self.attention_V = nn.Parameter(torch.Tensor(
-            self.attention_hidden_dim, 1).uniform_(0., 1.))
+        self.attention_W = nn.Parameter(
+            torch.Tensor(self.feat_dim, self.attention_hidden_dim).uniform_(0.0, 1.0)
+        )
+        self.attention_U = nn.Parameter(
+            torch.Tensor(self.feat_dim, self.attention_hidden_dim).uniform_(0.0, 1.0)
+        )
+        self.attention_V = nn.Parameter(
+            torch.Tensor(self.attention_hidden_dim, 1).uniform_(0.0, 1.0)
+        )
 
         # cnn layer
         self.conv = nn.Conv2d(
             in_channels=in_channels,
             out_channels=num_filters,
             kernel_size=filter_sizes,
-            padding='same'
+            padding='same',
         )
 
         # FC layer
         self.flatten = nn.Flatten()
         self.linears1 = nn.Sequential(
-            nn.LazyLinear(256),
-            nn.ReLU(),
-            nn.LazyLinear(24),
-            nn.ReLU())
+            nn.LazyLinear(256), nn.ReLU(), nn.LazyLinear(24), nn.ReLU()
+        )
 
         self.linears2 = nn.LazyLinear(self.num_classes)
 
         # gnn for transaction graph
-        self.gcn = TransactionGCN(
-            g.edata['feat'].shape[1], 128, 8, g, device)
+        self.gcn = TransactionGCN(g.edata['feat'].shape[1], 128, 8, g, device)
 
-    def attention_layer(
-        self,
-        X: torch.Tensor
-    ):
+    def attention_layer(self, X: torch.Tensor):
         self.output_att = []
         # input_att = torch.split(X, self.time_windows_dim, dim=1)
         input_att = torch.split(X, 1, dim=1)  # 第二个参数是split_size!
@@ -121,23 +122,22 @@ class stagn_2d_model(nn.Module):
             inp = torch.concat([x_i, c_i], axis=1)
             self.output_att.append(inp)
 
-        input_conv = torch.reshape(torch.concat(self.output_att, axis=1),
-                                   [-1, self.time_windows_dim, self.feat_dim*2])
+        input_conv = torch.reshape(
+            torch.concat(self.output_att, axis=1),
+            [-1, self.time_windows_dim, self.feat_dim * 2],
+        )
 
         self.input_conv_expanded = torch.unsqueeze(input_conv, 1)
 
         return self.input_conv_expanded
 
-    def cnn_layer(
-        self,
-        input: torch.Tensor
-    ):
+    def cnn_layer(self, input: torch.Tensor):
         if len(input.shape) == 3:
             self.input_conv_expanded = torch.unsqueeze(input, 1)
         elif len(input.shape) == 4:
             self.input_conv_expanded = input
         else:
-            print("Wrong conv input shape!")
+            print('Wrong conv input shape!')
 
         self.input_conv_expanded = F.relu(self.conv(input))
 
@@ -150,8 +150,12 @@ class stagn_2d_model(nn.Module):
         for i in range(len(x)):
             output = x[i]
             output = output.reshape(-1, self.feat_dim)
-            att_hidden = torch.tanh(torch.add(torch.matmul(
-                x_i, self.attention_W), torch.matmul(output, self.attention_U)))
+            att_hidden = torch.tanh(
+                torch.add(
+                    torch.matmul(x_i, self.attention_W),
+                    torch.matmul(output, self.attention_U),
+                )
+            )
             e_i_j = torch.matmul(att_hidden, self.attention_V)
             e_i.append(e_i_j)
 
@@ -168,8 +172,9 @@ class stagn_2d_model(nn.Module):
                 c_i_j = torch.multiply(alpha_i_j, output)
                 c_i.append(c_i_j)
 
-        c_i = torch.reshape(torch.concat(c_i, axis=1),
-                            [-1, self.time_windows_dim-1, self.feat_dim])
+        c_i = torch.reshape(
+            torch.concat(c_i, axis=1), [-1, self.time_windows_dim - 1, self.feat_dim]
+        )
         c_i = torch.sum(c_i, dim=1)
         return c_i
 
@@ -184,8 +189,9 @@ class stagn_2d_model(nn.Module):
         src_feat = g.ndata['h'][src_nds]
         dst_feat = g.ndata['h'][dst_nds]
         # all, 3, embedding_dim
-        node_feats = torch.stack(
-            [src_feat, dst_feat, edge_embs], dim=1).view(X_nume.shape[0], -1)
+        node_feats = torch.stack([src_feat, dst_feat, edge_embs], dim=1).view(
+            X_nume.shape[0], -1
+        )
         out = self.flatten(out)
         out = self.linears1(out)
         out = torch.cat([out, node_feats], dim=1)

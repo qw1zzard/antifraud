@@ -97,17 +97,20 @@ The repository is organized as follows:
 - `main.py`: organize all models;
 - `requirements.txt`: package dependencies;
 
-    
-## Requirements
-```
-python           3.7
-scikit-learn     1.0.2
-pandas           1.3.5
-numpy            1.21.6
-networkx         2.6.3
-scipy            1.7.3
-torch            1.12.1+cu113
-dgl-cu113        0.8.1
+## Python environment setup with Conda
+
+```bash
+conda create -n antifraud python=3.8
+conda activate antifraud
+
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+conda install -c dglteam/label/cu121 dgl
+
+conda install -c conda-forge ruff
+
+pip install pandas numpy networkx scipy scikit-learn matplotlib
+
+conda clean --all
 ```
 
 ### Contributors :

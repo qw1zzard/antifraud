@@ -7,7 +7,13 @@ from tqdm import tqdm
 from math import floor, ceil
 from methods.stan.stan_2d import stan_2d_model
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_score, average_precision_score
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    roc_auc_score,
+    f1_score,
+    average_precision_score,
+)
 
 
 def to_pred(logits: torch.Tensor) -> list:
@@ -27,7 +33,7 @@ def att_train_2d(
     batch_size: int = 256,
     attention_hidden_dim: int = 150,
     lr: float = 3e-3,
-    device: str = "cpu"
+    device: str = 'cpu',
 ):
     model = stan_2d_model(
         time_windows_dim=x_train.shape[1],
@@ -48,22 +54,22 @@ def att_train_2d(
 
     # anti label imbalance
     unique_labels, counts = torch.unique(labels, return_counts=True)
-    weights = (1 / counts)*len(labels)/len(unique_labels)
+    weights = (1 / counts) * len(labels) / len(unique_labels)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     loss_func = torch.nn.CrossEntropyLoss(weights)
 
     batch_num = ceil(len(labels) / batch_size)
     for epoch in range(epochs):
-
-        loss = 0.
+        loss = 0.0
         pred = []
 
-        for batch in (range(batch_num)):
+        for batch in range(batch_num):
             optimizer.zero_grad()
 
             batch_mask = list(
-                range(batch*batch_size, min((batch+1)*batch_size, len(labels))))
+                range(batch * batch_size, min((batch + 1) * batch_size, len(labels)))
+            )
 
             output = model(nume_feats[batch_mask])
 
@@ -78,7 +84,8 @@ def att_train_2d(
         true = labels.cpu().numpy()
         pred = np.array(pred)
         print(
-            f"Epoch: {epoch}, loss: {(loss / batch_num):.4f}, auc: {roc_auc_score(true, pred):.4f}, F1: {f1_score(true, pred, average='macro'):.4f}, AP: {average_precision_score(true, pred):.4f}")
+            f"Epoch: {epoch}, loss: {(loss / batch_num):.4f}, auc: {roc_auc_score(true, pred):.4f}, F1: {f1_score(true, pred, average='macro'):.4f}, AP: {average_precision_score(true, pred):.4f}"
+        )
         # print(confusion_matrix(true, pred))
 
     # feats_test = torch.from_numpy(
@@ -94,14 +101,18 @@ def att_train_2d(
         for batch in range(batch_num):
             optimizer.zero_grad()
             batch_mask = list(
-                range(batch*batch_size, min((batch+1)*batch_size, len(labels_test))))
+                range(
+                    batch * batch_size, min((batch + 1) * batch_size, len(labels_test))
+                )
+            )
             output = model(feats_test[batch_mask])
             pred.extend(to_pred(output))
 
         true = labels_test.cpu().numpy()
         pred = np.array(pred)
         print(
-            f"test set | auc: {roc_auc_score(true, pred):.4f}, F1: {f1_score(true, pred, average='macro'):.4f}, AP: {average_precision_score(true, pred):.4f}")
+            f"test set | auc: {roc_auc_score(true, pred):.4f}, F1: {f1_score(true, pred, average='macro'):.4f}, AP: {average_precision_score(true, pred):.4f}"
+        )
         # print(confusion_matrix(true, pred))
 
 
@@ -110,27 +121,39 @@ def stan_main(
     train_label_dir,
     test_feature_dir,
     test_label_dir,
-    mode: str = "2d",
+    mode: str = '2d',
     num_classed: int = 2,
     epochs: int = 18,
     batch_size: int = 256,
     attention_hidden_dim: int = 150,
     lr: float = 0.003,
-    device="cpu",
+    device='cpu',
 ):
-    train_feature = torch.from_numpy(np.load(train_feature_dir, allow_pickle=True)).to(
-        dtype=torch.float32).to(device)
+    train_feature = (
+        torch.from_numpy(np.load(train_feature_dir, allow_pickle=True))
+        .to(dtype=torch.float32)
+        .to(device)
+    )
     train_feature.transpose_(1, 2)
-    train_label = torch.from_numpy(np.load(train_label_dir, allow_pickle=True)).to(
-        dtype=torch.long).to(device)
-    test_feature = torch.from_numpy(np.load(test_feature_dir, allow_pickle=True)).to(
-        dtype=torch.float32).to(device)
+    train_label = (
+        torch.from_numpy(np.load(train_label_dir, allow_pickle=True))
+        .to(dtype=torch.long)
+        .to(device)
+    )
+    test_feature = (
+        torch.from_numpy(np.load(test_feature_dir, allow_pickle=True))
+        .to(dtype=torch.float32)
+        .to(device)
+    )
     test_feature.transpose_(1, 2)
-    test_label = torch.from_numpy(np.load(test_label_dir, allow_pickle=True)).to(
-        dtype=torch.long).to(device)
+    test_label = (
+        torch.from_numpy(np.load(test_label_dir, allow_pickle=True))
+        .to(dtype=torch.long)
+        .to(device)
+    )
 
     # y_pred = np.zeros(shape=test_label.shape)
-    if mode == "2d":
+    if mode == '2d':
         att_train_2d(
             train_feature,
             train_label,
@@ -140,5 +163,5 @@ def stan_main(
             batch_size=batch_size,
             attention_hidden_dim=attention_hidden_dim,
             lr=lr,
-            device=device
+            device=device,
         )
