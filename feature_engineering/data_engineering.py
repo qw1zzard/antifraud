@@ -25,8 +25,6 @@ def data_engineer_example(data_dir):
     for i in data.iterrows():
         data2 = []
         temp_data = data[data['card_id'] == i[1]['card_id']]
-        temp_county_id = i[1]['loc_cty']
-        temp_merch_id = i[1]['loc_merch']
         temp_time = i[1]['time_stamp']
         temp_label = i[1]['is_fraud']
         a_grant = i[1]['amt_grant']

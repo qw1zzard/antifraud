@@ -1,18 +1,11 @@
-from math import floor, ceil
+from math import ceil
 import numpy as np
-import pandas as pd
-from tqdm import tqdm
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
     roc_auc_score,
     f1_score,
     average_precision_score,
 )
-import os
 from .mcnn_model import mcnn, to_pred
 
 
