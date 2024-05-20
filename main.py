@@ -16,6 +16,9 @@ import dgl
 from scipy.io import loadmat
 import yaml
 
+import wandb
+
+
 logger = logging.getLogger(__name__)
 # sys.path.append("..")
 
@@ -84,6 +87,27 @@ def base_load_data(args: dict):
 
 
 def main(args):
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project='gtan',
+        # track hyperparameters and run metadata
+        config={
+            'dataset': args['dataset'],
+            'test_size': args['test_size'],
+            'device': args['device'],
+            'n_fold': args['n_fold'],
+            'seed': args['seed'],
+            'n_layers': args['n_layers'],
+            'batch_size': args['batch_size'],
+            'hid_dim': args['hid_dim'],
+            'dropout': args['dropout'],
+            'gated': args['gated'],
+            'wd': args['wd'],
+            'early_stopping': args['early_stopping'],
+            'max_epochs': args['max_epochs'],
+        },
+    )
+
     if args['method'] == 'mcnn':
         from methods.mcnn.mcnn_main import mcnn_main
 
@@ -130,7 +154,6 @@ def main(args):
             lr=args['lr'],
             device=args['device'],
         )
-
     elif args['method'] == 'stagn':
         from methods.stagn.stagn_main import stagn_main, load_stagn_data
 

@@ -16,6 +16,8 @@ from torch.optim.lr_scheduler import MultiStepLR
 from .gtan_model import GraphAttnModel
 from . import *
 
+import wandb
+
 
 def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
     device = args['device']
@@ -211,12 +213,31 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
                         except:
                             pass
 
+                        wandb.log(
+                            {
+                                'epoch': epoch,
+                                'batch': step,
+                                'loss': val_loss_list / val_all_list,
+                                'auc': roc_auc_score(batch_labels.cpu().numpy(), score),
+                                'f1': f1_score(
+                                    batch_labels.cpu().numpy(),
+                                    torch.argmax(
+                                        val_batch_logits.clone().detach(), dim=1
+                                    )[:]
+                                    .cpu()
+                                    .numpy(),
+                                ),
+                            }
+                        )
+
             # val_acc_list/val_all_list, model)
             earlystoper.earlystop(val_loss_list / val_all_list, model)
             if earlystoper.is_earlystop:
                 print('Early Stopping!')
                 break
         print('Best val_loss is: {:.7f}'.format(earlystoper.best_cv))
+        wandb.log({'best val_loss': earlystoper.best_cv})
+
         test_ind = torch.from_numpy(np.array(test_idx)).long().to(device)
         test_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
         test_dataloader = DataLoader(
@@ -275,6 +296,13 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
     print('test AUC:', roc_auc_score(y_target, test_score))
     print('test f1:', f1_score(y_target, test_score1, average='macro'))
     print('test AP:', average_precision_score(y_target, test_score))
+
+    wandb.log(
+        {
+            'test AUC': roc_auc_score(y_target, test_score),
+            'test f1': f1_score(y_target, test_score1, average='macro'),
+        }
+    )
 
 
 def load_gtan_data(dataset: str, test_size: float):
