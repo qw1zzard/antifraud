@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from dgl.utils import expand_as_pair
 from dgl import function as fn
 from dgl.base import DGLError
@@ -322,13 +321,13 @@ class GraphAttnModel(nn.Module):
             )
         )
 
-        for l in range(0, (self.n_layers - 1)):
+        for layer in range(0, (self.n_layers - 1)):
             # due to multi-head, the in_dim = num_hidden * num_heads
             self.layers.append(
                 TransformerConv(
-                    in_feats=self.hidden_dim * self.heads[l - 1],
+                    in_feats=self.hidden_dim * self.heads[layer - 1],
                     out_feats=self.hidden_dim,
-                    num_heads=self.heads[l],
+                    num_heads=self.heads[layer],
                     skip_feat=skip_feat,
                     gated=gated,
                     layer_norm=layer_norm,
@@ -372,8 +371,8 @@ class GraphAttnModel(nn.Module):
         label_embed = self.layers[3](label_embed)
         h = h + label_embed  # residual
 
-        for l in range(self.n_layers):
-            h = self.output_drop(self.layers[l + 4](blocks[l], h))
+        for layer in range(self.n_layers):
+            h = self.output_drop(self.layers[layer + 4](blocks[layer], h))
 
         logits = self.layers[-1](h)
 

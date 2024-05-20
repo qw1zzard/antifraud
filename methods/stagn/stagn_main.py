@@ -2,7 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import dgl
 import torch.nn.functional as F
 from scipy.stats import zscore
@@ -114,8 +113,6 @@ def load_stagn_data(args: dict):
     # load S-FFSD dataset for base models
     data_path = 'data/S-FFSD.csv'
     feat_df = pd.read_csv(data_path)
-    train_size = 1 - args['test_size']
-    method = args['method']
     # ICONIP16 & AAAI20 requires higher dimensional data
     if os.path.exists('data/features.npy'):
         features, labels = np.load('data/features.npy'), np.load('data/labels.npy')

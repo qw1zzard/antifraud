@@ -9,12 +9,12 @@ import pandas as pd
 import pickle
 from sklearn.model_selection import StratifiedKFold, train_test_split
 import torch.nn as nn
-from sklearn.preprocessing import LabelEncoder, QuantileTransformer
+from sklearn.preprocessing import LabelEncoder
 from dgl.dataloading import MultiLayerFullNeighborSampler
 from dgl.dataloading import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 from .gtan_model import GraphAttnModel
-from . import *
+from . import *  # noqa: F403
 
 import wandb
 
@@ -92,15 +92,15 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
             optimizer=optimizer, milestones=[4000, 12000], gamma=0.3
         )
 
-        earlystoper = early_stopper(patience=args['early_stopping'], verbose=True)
-        start_epoch, max_epochs = 0, 2000
+        earlystoper = early_stopper(patience=args['early_stopping'], verbose=True)  # noqa: F405
+        start_epoch = 0
         for epoch in range(start_epoch, args['max_epochs']):
             train_loss_list = []
             # train_acc_list = []
             model.train()
             for step, (input_nodes, seeds, blocks) in enumerate(train_dataloader):
                 batch_inputs, batch_work_inputs, batch_labels, lpa_labels = (
-                    load_lpa_subtensor(
+                    load_lpa_subtensor(  # noqa: F405
                         num_feat, cat_feat, labels, seeds, input_nodes, device
                     )
                 )
@@ -152,7 +152,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
                                 roc_auc_score(batch_labels.cpu().numpy(), score),
                             )
                         )
-                    except:
+                    except:  # noqa: E722
                         pass
 
             # mini-batch for validation
@@ -163,7 +163,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
             with torch.no_grad():
                 for step, (input_nodes, seeds, blocks) in enumerate(val_dataloader):
                     batch_inputs, batch_work_inputs, batch_labels, lpa_labels = (
-                        load_lpa_subtensor(
+                        load_lpa_subtensor(  # noqa: F405
                             num_feat, cat_feat, labels, seeds, input_nodes, device
                         )
                     )
@@ -210,7 +210,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
                                     roc_auc_score(batch_labels.cpu().numpy(), score),
                                 )
                             )
-                        except:
+                        except:  # noqa: E722
                             pass
 
                         wandb.log(
@@ -257,7 +257,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
             for step, (input_nodes, seeds, blocks) in enumerate(test_dataloader):
                 # print(input_nodes)
                 batch_inputs, batch_work_inputs, batch_labels, lpa_labels = (
-                    load_lpa_subtensor(
+                    load_lpa_subtensor(  # noqa: F405
                         num_feat, cat_feat, labels, seeds, input_nodes, device
                     )
                 )
@@ -267,7 +267,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
                     blocks, batch_inputs, lpa_labels, batch_work_inputs
                 )
                 test_predictions[seeds] = test_batch_logits
-                test_batch_pred = torch.sum(
+                test_batch_pred = torch.sum(  # noqa: F841
                     torch.argmax(test_batch_logits, dim=1) == batch_labels
                 ) / torch.tensor(batch_labels.shape[0])
                 if step % 10 == 0:
@@ -278,7 +278,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
         y_target, torch.softmax(oof_predictions, dim=1).cpu()[train_idx, 1]
     )
     print('NN out of fold AP is:', my_ap)
-    b_models, val_gnn_0, test_gnn_0 = (
+    b_models, val_gnn_0, test_gnn_0 = (  # noqa: F841
         earlystoper.best_model.to('cpu'),
         oof_predictions,
         test_predictions,
@@ -321,7 +321,6 @@ def load_gtan_data(dataset: str, test_size: float):
         df = df.loc[:, ~df.columns.str.contains('Unnamed')]
         data = df[df['Labels'] <= 2]
         data = data.reset_index(drop=True)
-        out = []
         alls = []
         allt = []
         pair = ['Source', 'Target', 'Location', 'Type']

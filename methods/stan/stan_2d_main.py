@@ -1,15 +1,9 @@
 import numpy as np
-import datetime
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from tqdm import tqdm
-from math import floor, ceil
+from math import ceil
 from methods.stan.stan_2d import stan_2d_model
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
     roc_auc_score,
     f1_score,
     average_precision_score,
@@ -95,7 +89,6 @@ def att_train_2d(
     feats_test = x_test
     labels_test = y_test
 
-    batch_num_test = ceil(len(labels_test) / batch_size)
     with torch.no_grad():
         pred = []
         for batch in range(batch_num):

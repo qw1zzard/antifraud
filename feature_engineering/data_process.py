@@ -7,11 +7,7 @@ import torch
 import dgl
 import random
 import os
-import time
-import argparse
 import pickle
-import matplotlib.pyplot as plt
-import networkx as nx
 import scipy.sparse as sp
 from sklearn.preprocessing import LabelEncoder
 
@@ -186,7 +182,7 @@ if __name__ == '__main__':
         For Yelpchi dataset
         Code partially from https://github.com/YingtongDou/CARE-GNN
     """
-    print(f'processing YELP data...')
+    print('processing YELP data...')
     yelp = loadmat(os.path.join(DATADIR, 'YelpChi.mat'))
     net_rur = yelp['net_rur']
     net_rtr = yelp['net_rtr']
@@ -222,7 +218,7 @@ if __name__ == '__main__':
     """
         For Amazon dataset
     """
-    print(f'processing AMAZON data...')
+    print('processing AMAZON data...')
     amz = loadmat(os.path.join(DATADIR, 'Amazon.mat'))
     net_upu = amz['net_upu']
     net_usu = amz['net_usu']
@@ -258,7 +254,7 @@ if __name__ == '__main__':
     # """
     #     For S-FFSD dataset
     # """
-    print(f'processing S-FFSD data...')
+    print('processing S-FFSD data...')
     data = pd.read_csv(os.path.join(DATADIR, 'S-FFSD.csv'))
     data = featmap_gen(data.reset_index(drop=True))
     data.replace(np.nan, 0, inplace=True)

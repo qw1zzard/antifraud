@@ -1,8 +1,6 @@
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from config import Config
 from feature_engineering.data_engineering import (
-    data_engineer_benchmark,
     span_data_2d,
     span_data_3d,
 )
@@ -10,10 +8,6 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import sys
-import pickle
-import dgl
-from scipy.io import loadmat
 import yaml
 
 import wandb
@@ -59,7 +53,6 @@ def base_load_data(args: dict):
     data_path = 'data/S-FFSD.csv'
     feat_df = pd.read_csv(data_path)
     train_size = 1 - args['test_size']
-    method = args['method']
     # for ICONIP16 & AAAI20
     if args['method'] == 'stan':
         if os.path.exists('data/tel_3d.npy'):
@@ -69,7 +62,6 @@ def base_load_data(args: dict):
         if os.path.exists('data/tel_2d.npy'):
             return
         features, labels = span_data_2d(feat_df)
-    num_trans = len(feat_df)
     trf, tef, trl, tel = train_test_split(
         features, labels, train_size=train_size, stratify=labels, shuffle=True
     )

@@ -1,4 +1,3 @@
-import os
 from dgl.dataloading import MultiLayerFullNeighborSampler
 from dgl.dataloading import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
@@ -15,7 +14,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import average_precision_score, roc_auc_score, f1_score
 from scipy.io import loadmat
 from tqdm import tqdm
-from . import *
+from . import *  # noqa: F403
 from .rgtan_lpa import load_lpa_subtensor
 from .rgtan_model import RGTAN
 
@@ -115,8 +114,8 @@ def rgtan_main(
             optimizer=optimizer, milestones=[4000, 12000], gamma=0.3
         )
 
-        earlystoper = early_stopper(patience=args['early_stopping'], verbose=True)
-        start_epoch, max_epochs = 0, 2000
+        earlystoper = early_stopper(patience=args['early_stopping'], verbose=True)  # noqa: F405
+        start_epoch = 0
         for epoch in range(start_epoch, args['max_epochs']):
             train_loss_list = []
             # train_acc_list = []
@@ -192,7 +191,7 @@ def rgtan_main(
                                 roc_auc_score(batch_labels.cpu().numpy(), score),
                             )
                         )
-                    except:
+                    except:  # noqa: E722
                         pass
 
             # mini-batch for validation
@@ -268,7 +267,7 @@ def rgtan_main(
                                     roc_auc_score(batch_labels.cpu().numpy(), score),
                                 )
                             )
-                        except:
+                        except:  # noqa: E722
                             pass
 
             # val_acc_list/val_all_list, model)
@@ -322,7 +321,7 @@ def rgtan_main(
                     batch_neighstat_inputs,
                 )
                 test_predictions[seeds] = test_batch_logits
-                test_batch_pred = torch.sum(
+                test_batch_pred = torch.sum(  # noqa: F841
                     torch.argmax(test_batch_logits, dim=1) == batch_labels
                 ) / torch.tensor(batch_labels.shape[0])
                 if step % 10 == 0:
@@ -333,7 +332,7 @@ def rgtan_main(
         y_target, torch.softmax(oof_predictions, dim=1).cpu()[train_idx, 1]
     )
     print('NN out of fold AP is:', my_ap)
-    b_models, val_gnn_0, test_gnn_0 = (
+    b_models, val_gnn_0, test_gnn_0 = (  # noqa: F841
         earlystoper.best_model.to('cpu'),
         oof_predictions,
         test_predictions,
@@ -366,7 +365,6 @@ def loda_rgtan_data(dataset: str, test_size: float):
         #####
         data = df[df['Labels'] <= 2]
         data = data.reset_index(drop=True)
-        out = []
         alls = []
         allt = []
         pair = ['Source', 'Target', 'Location', 'Type']
@@ -458,7 +456,7 @@ def loda_rgtan_data(dataset: str, test_size: float):
             feat_neigh = pd.read_csv(prefix + 'yelp_neigh_feat.csv')
             print('neighborhood feature loaded for nn input.')
             neigh_features = feat_neigh
-        except:
+        except:  # noqa: E722
             print('no neighbohood feature used.')
 
     elif dataset == 'amazon':
@@ -497,7 +495,7 @@ def loda_rgtan_data(dataset: str, test_size: float):
             feat_neigh = pd.read_csv(prefix + 'amazon_neigh_feat.csv')
             print('neighborhood feature loaded for nn input.')
             neigh_features = feat_neigh
-        except:
+        except:  # noqa: E722
             print('no neighbohood feature used.')
 
     return feat_data, labels, train_idx, test_idx, g, cat_features, neigh_features
